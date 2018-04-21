@@ -25,6 +25,12 @@ int RemoveItem(BufferItem *item){
 
 int main(int argc,char** argv)
 {
-    printf("stuff to print");
+//    1. get command line arguments argv[1], argv[2], argv[3]
+//    2. initialize buffer
+//    3. create producer thread(s)
+//    4. create consumer thread(s)
+//    5. sleep
+//    6. Exit
+
     return 0;
 }
