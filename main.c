@@ -27,6 +27,7 @@ int main(int argc,char** argv)
 {
 //    1. get command line arguments argv[1], argv[2], argv[3]
 //    2. initialize buffer
+//    2a. initialize mutex for buffer
 //    3. create producer thread(s)
 //    4. create consumer thread(s)
 //    5. sleep
