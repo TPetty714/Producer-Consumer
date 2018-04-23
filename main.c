@@ -12,17 +12,29 @@
 
 BufferItem buffer [BUFFER_SIZE];
 
+void *Consumer(void *param);
+int InsertItem(BufferItem item);
+void *Producer(void *param);
+int RemoveItem(BufferItem *item);
+
+void *Consumer(void *param){
+    BufferItem item;
+    while(true){
+//        sleep for a random period of time
+//        sleep();
+        if(RemoveItem(&item)){
+            fprintf(stderr,"remove item error");
+        }else{
+            printf("consumer consumed %d\n", item);
+        }
+    }
+}
+
 int InsertItem(BufferItem item){
     // insert item into buffer
     // return 0 if successful, otherwise
     // return -1 indicating an error condition
-}
-
-int RemoveItem(BufferItem *item){
-    // remove an object from buffer
-    // place it in item
-    // return 0 if sucessful, otherwise
-    // return -1 indicating an error condition
+    return 0;
 }
 
 int main(int argc,char** argv)
@@ -42,6 +54,31 @@ int main(int argc,char** argv)
 
     return 0;
 }
+
+void *Producer(void *param){
+    BufferItem item;
+    while(true){
+//        sleep for a random period of time
+//        sleep();
+//        generate a random number
+        item = rand();
+        if(InsertItem(item)){
+            fprintf(stderr, "report error");
+        }else{
+            printf("producer produced %d\n", item);
+        }
+    }
+}
+
+
+int RemoveItem(BufferItem *item){
+    // remove an object from buffer
+    // place it in item
+    // return 0 if sucessful, otherwise
+    // return -1 indicating an error condition
+    return 0;
+}
+
 int Power(int base, int exp){
 
     if (exp == 0)
