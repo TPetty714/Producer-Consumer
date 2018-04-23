@@ -16,6 +16,7 @@ void *Consumer(void *param);
 int InsertItem(BufferItem item);
 void *Producer(void *param);
 int RemoveItem(BufferItem *item);
+int Power(int base, int exp);
 
 void *Consumer(void *param){
     BufferItem item;
@@ -45,6 +46,8 @@ int main(int argc,char** argv)
 //    printf("sleep time: %d\n", sleepTime);
     printf("size of c: %ld\n", strlen(c));
     printf("contents of c: %s\n", c);
+    int powerResult = Power(2, 3);
+    printf("power result: %d", powerResult);
 //    2. initialize buffer
 //    2a. initialize mutex for buffer
 //    3. create producer thread(s)
@@ -86,9 +89,11 @@ int Power(int base, int exp){
     else if (exp == 1)
         return base;
     else{
+        int result = base;
         for(int i = 1; i < exp; i++){
-
+            result *= base;
         }
+        return result;
     }
 
 }
