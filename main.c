@@ -66,6 +66,8 @@ void Consumer(int conId) {
 int main(int argc,char** argv)
 {
 //    1. get command line arguments argv[1], argv[2], argv[3]
+//    sleep time, number producers, number consumers
+
 	int num_prod = 10;
 	int num_consum = 10;
 //    2. initialize buffer
