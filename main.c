@@ -6,6 +6,8 @@
 #include <math.h>
 #include <time.h>
 #include <pthread.h>
+#include <stdbool.h>
+#include <string.h>
 #include "buffer.h"
 
 BufferItem buffer [BUFFER_SIZE];
@@ -39,4 +41,17 @@ int main(int argc,char** argv)
 //    6. Exit
 
     return 0;
+}
+int Power(int base, int exp){
+
+    if (exp == 0)
+        return 1;
+    else if (exp == 1)
+        return base;
+    else{
+        for(int i = 1; i < exp; i++){
+
+        }
+    }
+
 }
