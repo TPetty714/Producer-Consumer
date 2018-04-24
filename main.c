@@ -6,6 +6,8 @@
 #include <math.h>
 #include <time.h>
 #include <pthread.h>
+#include <stdbool.h>
+#include <string.h>
 #include "buffer.h"
 
 pthread_mutex_t buff_mutex;
@@ -13,6 +15,25 @@ char* ShareMalloc(int);
 
 
 BufferItem buffer [BUFFER_SIZE];
+
+void *Consumer(void *param);
+int InsertItem(BufferItem item);
+void *Producer(void *param);
+int RemoveItem(BufferItem *item);
+int Power(int base, int exp);
+
+void *Consumer(void *param){
+    BufferItem item;
+    while(true){
+//        sleep for a random period of time
+//        sleep();
+        if(RemoveItem(&item)){
+            fprintf(stderr,"remove item error");
+        }else{
+            printf("consumer consumed %d\n", item);
+        }
+    }
+}
 
 int InsertItem(BufferItem item){
 		// insert item into buffer
@@ -22,14 +43,6 @@ int InsertItem(BufferItem item){
 		// return -1 indicating an error condition
 }
 
-int RemoveItem(BufferItem *item){
-		// remove an object from buffer
-		// place it in item
-		// return 0 if sucessful, otherwise
-	printf("Removing %d from buffer\n", item);
-	return 0;
-		// return -1 indicating an error condition
-}
 
 int Exit(pthread_t *producers, int num_prod, pthread_t *consumers, int num_consum){
 	for (int i = 0; i < num_prod; i++){
@@ -66,6 +79,19 @@ void Consumer(int conId) {
 int main(int argc,char** argv)
 {
 //    1. get command line arguments argv[1], argv[2], argv[3]
+    char* c = argv[1];
+    int sleepTime = 0;
+    int producerSize = 0;
+    int consumerSize = 0;
+
+    sscanf(argv[1],"%d", &sleepTime);
+    sscanf(argv[2], "%d", &producerSize);
+    sscanf(argv[3], "%d", &consumerSize);
+
+    printf("sleeptime: %d \n", sleepTime);
+    printf("producerSize: %d\n", producerSize);
+    printf("producerSize: %d\n", consumerSize);
+
 //    sleep time, number producers, number consumers
 
 	int num_prod = 10;
@@ -94,3 +120,31 @@ int main(int argc,char** argv)
 	Exit(*producer_array, num_prod, *consumer_array, num_consum);
 	return 0;
 }
+
+    return 0;
+}
+
+void *Producer(void *param){
+    BufferItem item;
+    while(true){
+//        sleep for a random period of time
+//        sleep();
+//        generate a random number
+        item = rand();
+        if(InsertItem(item)){
+            fprintf(stderr, "report error");
+        }else{
+            printf("producer produced %d\n", item);
+        }
+    }
+}
+
+
+int RemoveItem(BufferItem *item){
+    // remove an object from buffer
+    // place it in item
+    // return 0 if sucessful, otherwise
+    // return -1 indicating an error condition
+    return 0;
+}
+
