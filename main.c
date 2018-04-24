@@ -25,7 +25,7 @@ int numProdThreads = 0;
 int numConsThreads = 0;
 
 void Consumer(int conId);
-int Exit(pthread_t *producers, int num_prod, pthread_t *consumers, int num_consum);
+int Exit(int);
 void initConsumerThreads(int numThreads);
 void initItemBuffer();
 void initMutexAndCondVars();
@@ -39,7 +39,7 @@ int main(int argc,char** argv){
 //    1. get command line arguments argv[1], argv[2], argv[3]
     char* c = argv[1];
 
-
+    signal(SIGINT, Exit);
 //    get arguments
 //    sleep time, number producers, number consumers
     if (argc == 4){
@@ -69,12 +69,16 @@ int main(int argc,char** argv){
     initConsumerThreads(numConsThreads);
 
 //    5. sleep
-//    printf("main sleeping\n");
-//    sleep(runTime);
+//    while(1) {
+        printf("main sleeping\n");
+        sleep(runTime);
+//    }
 
 //    6. Exit
-    Exit(producerThreads, numProdThreads, consumerThreads, numConsThreads);
-    printf("Exiting\n");
+
+//    printf("Exiting\n");
+    Exit(1);
+    sleep(runTime);
     return 0;
 }
 void* ThreadExit(int conId){
@@ -106,14 +110,15 @@ void Consumer(int conId) {
     }
 }
 
-int Exit(pthread_t *producers, int num_prod, pthread_t *consumers, int num_consum) {
-
-    for (int i = 0; i < num_prod; i++){
-        pthread_join(producers[i],NULL );
+int Exit(int sig) {
+    printf("Exiting\n");
+    signal(sig, SIG_IGN);
+    for (int i = 0; i < numProdThreads; i++){
+        pthread_join(producerThreads[i],NULL );
         printf("Producer %d, Exiting.\n", i+1);
     }
-    for (int i = 0; i < num_consum; i++){
-        pthread_join(consumers[i],NULL );
+    for (int i = 0; i < numConsThreads; i++){
+        pthread_join(consumerThreads[i],NULL );
         printf("Consumer %d, Exiting.\n", (i+1));
     }
     return 0;
