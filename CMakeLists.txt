@@ -1,6 +1,8 @@
-cmake_minimum_required(VERSION 3.10)
-project(producer_consumer C)
+cmake_minimum_required(VERSION 3.9)
+project(producer_consumer)
 
-set(CMAKE_C_STANDARD 99)
+set(CMAKE_CXX_STANDARD 11)
 
-add_executable(producer_consumer main.c)
+add_executable(producer_consumer
+        main.c
+        buffer.h)

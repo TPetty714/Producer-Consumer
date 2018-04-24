@@ -1,2 +1,2 @@
 conprod:main.c buffer.h
-	gcc -Wall -g -pedantic -o conprod main.c buffer.h -lm -pthread
+	gcc -Wall -std=c99 -g -pedantic -o conprod main.c buffer.h -lm -pthread
