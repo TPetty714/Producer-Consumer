@@ -19,10 +19,14 @@ pthread_t *consumerThreads;
 pthread_mutex_t buff_mutex;
 pthread_cond_t empty;
 pthread_cond_t full;
+int runTime = 0;
+int numProdThreads = 0;
+int numConsThreads = 0;
 
 void *Consumer(void *conId);
 int Exit(pthread_t *producers, int num_prod, pthread_t *consumers, int num_consum);
 void initConsumerThreads(int numThreads);
+void initItemBuffer();
 void initMutexAndCondVars();
 void initProducerThreads(int numThreads);
 int InsertItem(BufferItem item);
