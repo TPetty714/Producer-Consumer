@@ -8,6 +8,7 @@
 #include <pthread.h>
 #include <stdbool.h>
 #include <string.h>
+#include <signal.h>
 #include "buffer.h"
 
 char* ShareMalloc(int);
@@ -32,6 +33,7 @@ void initProducerThreads(int numThreads);
 int InsertItem(BufferItem item);
 void *Producer(void* prodId);
 int RemoveItem(BufferItem *item);
+void * ThreadExit(int);
 
 int main(int argc,char** argv){
 //    1. get command line arguments argv[1], argv[2], argv[3]
@@ -67,7 +69,7 @@ int main(int argc,char** argv){
     initConsumerThreads(numConsThreads);
 
 //    5. sleep
-    printf("main sleeping\n");
+//    printf("main sleeping\n");
 //    sleep(runTime);
 
 //    6. Exit
@@ -75,36 +77,69 @@ int main(int argc,char** argv){
     printf("Exiting\n");
     return 0;
 }
+void* ThreadExit(int conId){
+    pthread_exit(conId);
+}
 
 void *Consumer(void *conId) {
+    BufferItem item = 0;
+    printf("Consumer!\n");
+    int id = *(int*)conId;
+    signal(SIGINT, ThreadExit(id));
+
     while(1) {
+
+
+
         while (pthread_mutex_lock(&buff_mutex) != 0)
             fprintf(stderr, "ERROR on pthread_mutex_lock. consumerID: %d, errno:%d ", conId + 1, errno);
-        RemoveItem(conId);
+//        while the item removed is not successful
+//        things to consume do not exist
+//        while(RemoveItem(&item) == -1){
+//            printf("Empty Buffer!\n");
+////            signal that the itemBuffer is empty
+//            pthread_cond_signal(&empty);
+//            pthread_cond_wait(&full, &buff_mutex);
+//        }
+//        printf("Consmer %d Consumed %d\n", *(int*)conId, item);
+        printf("Consumer reading");
         while (pthread_mutex_unlock(&buff_mutex) != 0)
             fprintf(stderr, "ERROR on pthread_mutex_unlock. consumerID: %d, errno:%d ", conId + 1, errno);
+        fflush(stdout);
     }
 }
 
 int Exit(pthread_t *producers, int num_prod, pthread_t *consumers, int num_consum) {
+
     for (int i = 0; i < num_prod; i++){
-        pthread_join( producers[i],NULL );
-        printf("Producer %d, done.\n", i+1);
+        pthread_join(producers[i],NULL );
+        printf("Producer %d, Exiting.\n", i+1);
     }
     for (int i = 0; i < num_consum; i++){
-        pthread_join( consumers[i],NULL );
-        printf("Consumer %d, done.\n", i+1);
+        pthread_join(consumers[i],NULL );
+        printf("Consumer %d, Exiting.\n", (i+1));
     }
     return 0;
 }
 
+void initItemBuffer(){
+    for(int i =0; i < BUFFER_SIZE; i++){
+        itemBuffer[i] = -1;
+    }
+}
+
+void printItemBuffer(){
+    for(int i = 0; i < BUFFER_SIZE; i++){
+        printf("Itembuffer %d: value: %d", i, itemBuffer[i]);
+    }
+}
 void initConsumerThreads(int numThreads){
     consumerThreads = malloc(sizeof(pthread_t)*numThreads);
     for (int i = 0; i < numThreads; i++){
         if(pthread_create(&consumerThreads[i],NULL, Consumer, &i)!=0)
             fprintf(stderr, "pthread failed to create errno: %d consumerID: %d",errno, i);
         else
-            printf("Consumer %d consuming\n", i+1);
+            printf("Init Consumer %d\n", i+1);
     }
 }
 
@@ -115,38 +150,73 @@ void initMutexAndCondVars() {
 }
 
 void initProducerThreads(int numThreads){
-    producerThreads = malloc(sizeof(pthread_t)*numThreads);
+    producerThreads = (pthread_t *)malloc(sizeof(pthread_t)*numThreads);
     for (int i = 0; i < numThreads; i++){
         if(pthread_create(&producerThreads[i],NULL, Producer, &i)!=0)
-            fprintf(stderr, "pthread failed to create errno: %d producerID: %d",errno, i);
+            fprintf(stderr, "pthread failed to create errno: %d producerID: %d",errno, &i);
         else
-            printf("Producer %d Producing\n", i+1);
+            printf("Init Producer %d\n", i+1);
     }
 }
 
 int InsertItem(BufferItem item){
     // insert item into buffer
-    // return 0 if successful, otherwise
-//    printf("Adding %d to buffer\n", item);
-    return 0;
-    // return -1 indicating an error condition
+    printf("InsertItem\n");
+    int i = 0;
+    for(i; i < BUFFER_SIZE; i++){
+        if (itemBuffer[i]== -1)
+            break;
+    }
+    if (i == BUFFER_SIZE)
+        return -1;// return -1 indicating an error condition
+    else{
+        printf("Adding %d to buffer\n", item);
+        itemBuffer[i] = item;
+        return 0;// return 0 if successful, otherwise
+    }
 }
 
 void *Producer(void *prodId) {
-    int randSleep = rand();
+    int randSleep = -1;
+    int id = *(int*)prodId;
     while(1) {
+
+        randSleep = rand();
+
+        BufferItem item = rand();
+
         while (pthread_mutex_lock(&buff_mutex) != 0)
-            fprintf(stderr, "ERROR on pthread_mutex_lock. producerID: %d, errno:%d ", prodId, errno);
-        InsertItem(prodId);
+            fprintf(stderr, "ERROR on pthread_mutex_lock. producerID: %d, errno:%d ", id, errno);
+        int result = InsertItem(item);
+        if (result == -1)
+            pthread_cond_signal(&full);
+//        while(InsertItem(item) ==-1){
+//            printf("Full Buffer\n");
+////            signal that the itemBuffer is
+//            pthread_cond_signal(&full);
+////            wait for a signal that the buffer is consumed
+////            pthread_cond_wait(&buff_mutex, &empty);
+//        }
+        fprintf(stdout, "Producer %d Producing\n", id);
         while (pthread_mutex_unlock(&buff_mutex) != 0)
-            fprintf(stderr, "ERROR on pthread_mutex_unlock. producerID: %d, errno:%d ", prodId, errno);
+            fprintf(stderr, "ERROR on pthread_mutex_unlock. producerID: %d, errno:%d ", id, errno);
+        printf("producer %d sleeping: %d\n", id, randSleep);
+//        sleep(randSleep);
+        fprintf(stdout, "done sleeping: %d\n", randSleep);
+        fflush(stdout);
     }
 }
 
 int RemoveItem(BufferItem *item){
-    // remove an object from buffer
-    // place it in item
-    // return 0 if sucessful, otherwise
-    // return -1 indicating an error condition
-    return 0;
+    int i;
+    for (i = 0; i < BUFFER_SIZE; i++){
+        if(itemBuffer[i]!= -1) {
+            // place it in item
+            *item = itemBuffer[i];
+            // remove an object from buffer
+            itemBuffer[i] = -1;
+            return 0;// return 0 if sucessful, otherwise
+        }
+    }
+    return  -1;// return -1 indicating an error condition
 }
