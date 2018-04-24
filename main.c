@@ -36,23 +36,28 @@ int RemoveItem(BufferItem *item);
 int main(int argc,char** argv){
 //    1. get command line arguments argv[1], argv[2], argv[3]
     char* c = argv[1];
-    int sleepTime = 0;
-    int numProdThreads = 0;
-    int numConsThreads = 0;
+
 
 //    get arguments
-    sscanf(argv[1],"%d", &sleepTime);
-    sleepTime = strtol(argv[1], &c, 10);
-    sscanf(argv[2], "%d", &numProdThreads);
-    numProdThreads = strtol(argv[2], &c, 10);
-    sscanf(argv[3], "%d", &numConsThreads);
-    numConsThreads = strtol(argv[3], &c, 10);
-
 //    sleep time, number producers, number consumers
+    if (argc == 4){
+        sscanf(argv[1],"%d", &runTime);
+        runTime = strtol(argv[1], &c, 10);
+        sscanf(argv[2], "%d", &numProdThreads);
+        numProdThreads = strtol(argv[2], &c, 10);
+        sscanf(argv[3], "%d", &numConsThreads);
+        numConsThreads = strtol(argv[3], &c, 10);
+    }else{
+        printf("using default values\n");
+        runTime = 10;
+        numProdThreads = 5;
+        numConsThreads = 5;
+    }
+
 
 //    2. initialize buffer
-
-//    2a. initialize mutex for buffer
+    initItemBuffer();
+//    2a. initialize mutex and condVars
     initMutexAndCondVars();
 
 //    3. create producer thread(s)
