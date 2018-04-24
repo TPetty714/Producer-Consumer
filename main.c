@@ -67,9 +67,12 @@ int main(int argc,char** argv){
     initConsumerThreads(numConsThreads);
 
 //    5. sleep
-    sleep(sleepTime);
+    printf("main sleeping\n");
+//    sleep(runTime);
+
 //    6. Exit
     Exit(producerThreads, numProdThreads, consumerThreads, numConsThreads);
+    printf("Exiting\n");
     return 0;
 }
 
