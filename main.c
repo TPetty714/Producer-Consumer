@@ -42,12 +42,18 @@ int main(int argc,char** argv)
 {
 //    1. get command line arguments argv[1], argv[2], argv[3]
     char* c = argv[1];
-//    int sleepTime = *argv[1] - '0';
-//    printf("sleep time: %d\n", sleepTime);
-    printf("size of c: %ld\n", strlen(c));
-    printf("contents of c: %s\n", c);
-    int powerResult = Power(2, 3);
-    printf("power result: %d", powerResult);
+    int sleepTime = 0;
+    int producerSize = 0;
+    int consumerSize = 0;
+
+    sscanf(argv[1],"%d", &sleepTime);
+    sscanf(argv[2], "%d", &producerSize);
+    sscanf(argv[3], "%d", &consumerSize);
+
+    printf("sleeptime: %d \n", sleepTime);
+    printf("producerSize: %d\n", producerSize);
+    printf("producerSize: %d\n", consumerSize);
+
 //    2. initialize buffer
 //    2a. initialize mutex for buffer
 //    3. create producer thread(s)
@@ -82,18 +88,3 @@ int RemoveItem(BufferItem *item){
     return 0;
 }
 
-int Power(int base, int exp){
-
-    if (exp == 0)
-        return 1;
-    else if (exp == 1)
-        return base;
-    else{
-        int result = base;
-        for(int i = 1; i < exp; i++){
-            result *= base;
-        }
-        return result;
-    }
-
-}
