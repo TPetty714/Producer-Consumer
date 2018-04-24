@@ -23,7 +23,7 @@ void *Consumer(void *param);
 int InsertItem(BufferItem item);
 void *Producer(void *param);
 int RemoveItem(BufferItem *item);
-int Power(int base, int exp);
+
 pthread_t *producerThreads;
 pthread_t *consumerThreads;
 
