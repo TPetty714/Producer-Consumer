@@ -35,13 +35,13 @@ void initProducerThreads(int numThreads);
 int InsertItem(BufferItem item);
 void Producer(int prodId);
 int RemoveItem(BufferItem *item);
-void * ThreadExit(int);
+void ThreadExit(int);
 
 int main(int argc,char** argv){
 //    1. get command line arguments argv[1], argv[2], argv[3]
     char* c = argv[1];
 
-    signal(SIGINT, Exit);
+    signal(SIGINT, ThreadExit);
 //    get arguments
 //    sleep time, number producers, number consumers
     if (argc == 4){
@@ -71,20 +71,25 @@ int main(int argc,char** argv){
     initConsumerThreads(numConsThreads);
 
 //    5. sleep
-//    while(1) {
-        printf("main sleeping\n");
-        sleep(runTime);
+    printf("main sleeping\n");
+    sleep(runTime);
+    printf("main DONE sleeping Raising Quit Alarm\n");
+//        raise signal for threads to quit
+    raise(SIGINT);
 //    }
 
 //    6. Exit
 
 //    printf("Exiting\n");
     Exit(1);
-    sleep(runTime);
+//    sleep(runTime);
     return 0;
 }
-void* ThreadExit(int conId){
-    pthread_exit(conId);
+void ThreadExit(int sig){
+    signal(SIGINT, ThreadExit);
+    printf("thread exit\n");
+    exitConsumers = 1;
+    exitProducers = 1;
 }
 
 void Consumer(int conId) {
@@ -92,8 +97,9 @@ void Consumer(int conId) {
     printf("Consumer %d!\n", conId);
 //    int id = conId;
 //    signal(SIGINT, ThreadExit(id));
-  int randSleep = rand()%10;
+    int randSleep;
     while(1) {
+        randSleep = rand()%runTime;
         if (exitConsumers == 1)
             return;
         while (pthread_mutex_lock(&buff_mutex) != 0)
@@ -103,7 +109,8 @@ void Consumer(int conId) {
         if(RemoveItem(&item) == -1){
             printf("Empty Buffer!\n");
 //            signal that the itemBuffer is empty
-            pthread_cond_signal(&empty);
+//            pthread_cond_signal(&empty);
+            pthread_cond_broadcast(&empty);
 //            pthread_cond_wait(&full, &buff_mutex);
         } else {
             printf("Consumer %d Consumed %d\n", conId, item);
@@ -113,20 +120,19 @@ void Consumer(int conId) {
         sleep(randSleep);
         fprintf(stdout, "Consumer %d done sleeping: %d\n", conId, randSleep);
         fflush(stdout);
-
     }
 }
 
 int Exit(int sig) {
     printf("Exiting\n");
-    signal(sig, SIG_IGN);
-    exitProducers = 1;
+//    signal(sig, SIG_IGN);
+//    exitProducers = 1;
     for (int i = 0; i < numProdThreads; i++){
         pthread_join(producerThreads[i],NULL );
         printf("Producer %d, Exiting.\n", i+1);
 //        pthread_exit(producerThreads[i]);
     }
-    exitConsumers = 1;
+//    exitConsumers = 1;
     for (int i = 0; i < numConsThreads; i++){
         pthread_join(consumerThreads[i],NULL );
         printf("Consumer %d, Exiting.\n", (i+1));
@@ -197,7 +203,7 @@ void Producer(int prodId) {
     while(1) {
         if (exitProducers == 1)
             return;
-        randSleep = rand()%10;
+        randSleep = rand()%runTime;
 
         BufferItem item = rand();
 
@@ -206,14 +212,17 @@ void Producer(int prodId) {
 //        int result = InsertItem(item);
 //        if (result == -1)
 //            pthread_cond_signal(&full);
-        while(InsertItem(item) ==-1){
-//            printf("Full Buffer\n");
+//        while(InsertItem(item) ==-1){
+        if(InsertItem(item) == -1){
+            printf("Full Buffer\n");
 //            signal that the itemBuffer is
             pthread_cond_broadcast(&full);
 //            wait for a signal that the buffer is consumed
-            pthread_cond_wait(&empty, &buff_mutex);
+//            pthread_cond_wait(&empty, &buff_mutex);
+        }else{
+            fprintf(stdout, "Producer %d Producing\n", id);
         }
-        fprintf(stdout, "Producer %d Producing\n", id);
+
         while (pthread_mutex_unlock(&buff_mutex) != 0)
             fprintf(stderr, "ERROR on pthread_mutex_unlock. producerID: %d, errno:%d ", id, errno);
         printf("producer %d sleeping: %d\n", id, randSleep);
