@@ -20,8 +20,7 @@ pthread_t *consumerThreads;
 pthread_mutex_t buff_mutex;
 pthread_cond_t empty;
 pthread_cond_t full;
-int exitProducers;
-int exitConsumers;
+int exitThreads;
 int runTime = 0;
 int numProdThreads = 0;
 int numConsThreads = 0;
@@ -53,7 +52,7 @@ int main(int argc,char** argv){
         numConsThreads = strtol(argv[3], &c, 10);
     }else{
         printf("using default values\n");
-        runTime = 1;
+        runTime = 10;
         numProdThreads = 5;
         numConsThreads = 5;
     }
@@ -71,8 +70,10 @@ int main(int argc,char** argv){
     initConsumerThreads(numConsThreads);
 
 //    5. sleep
-    printf("main sleeping\n");
-    sleep(runTime);
+    while(exitThreads == 0) {
+        printf("main sleeping\n");
+        sleep(runTime);
+    }
     printf("main DONE sleeping Raising Quit Alarm\n");
 //        raise signal for threads to quit
     raise(SIGINT);
@@ -81,6 +82,7 @@ int main(int argc,char** argv){
 //    6. Exit
 
 //    printf("Exiting\n");
+    free(itemBuffer);
     Exit(1);
 //    sleep(runTime);
     return 0;
@@ -88,55 +90,47 @@ int main(int argc,char** argv){
 void ThreadExit(int sig){
     signal(SIGINT, ThreadExit);
     printf("thread exit\n");
-    exitConsumers = 1;
-    exitProducers = 1;
+    exitThreads = 1;
 }
 
 void Consumer(int conId) {
+    int id = conId + 1;
     BufferItem item = 0;
     printf("Consumer %d!\n", conId);
 //    int id = conId;
 //    signal(SIGINT, ThreadExit(id));
     int randSleep;
     while(1) {
-        randSleep = rand()%runTime;
-        if (exitConsumers == 1)
+        randSleep = rand()%10;
+        if (exitThreads == 1) {
+            pthread_mutex_unlock(&buff_mutex);
             return;
+        }
         while (pthread_mutex_lock(&buff_mutex) != 0)
-            fprintf(stderr, "ERROR on pthread_mutex_lock. consumerID: %d, errno:%d ", conId + 1, errno);
-//        while the item removed is not successful
-//        things to consume do not exist
+            fprintf(stderr, "ERROR on pthread_mutex_lock. consumerID: %d, errno:%d ", id, errno);
         if(RemoveItem(&item) == -1){
             printf("Empty Buffer!\n");
-//            signal that the itemBuffer is empty
-//            pthread_cond_signal(&empty);
             pthread_cond_broadcast(&empty);
-//            pthread_cond_wait(&full, &buff_mutex);
         } else {
-            printf("Consumer %d Consumed %d\n", conId, item);
+            printf("Consumer %d Consumed %d\n", id, item);
         }
         while (pthread_mutex_unlock(&buff_mutex) != 0)
-            fprintf(stderr, "ERROR on pthread_mutex_unlock. consumerID: %d, errno:%d ", conId + 1, errno);
+            fprintf(stderr, "ERROR on pthread_mutex_unlock. consumerID: %d, errno:%d ", id, errno);
         sleep(randSleep);
-        fprintf(stdout, "Consumer %d done sleeping: %d\n", conId, randSleep);
+        fprintf(stdout, "Consumer %d done sleeping: %d\n", id, randSleep);
         fflush(stdout);
     }
 }
 
 int Exit(int sig) {
     printf("Exiting\n");
-//    signal(sig, SIG_IGN);
-//    exitProducers = 1;
     for (int i = 0; i < numProdThreads; i++){
         pthread_join(producerThreads[i],NULL );
         printf("Producer %d, Exiting.\n", i+1);
-//        pthread_exit(producerThreads[i]);
     }
-//    exitConsumers = 1;
     for (int i = 0; i < numConsThreads; i++){
         pthread_join(consumerThreads[i],NULL );
-        printf("Consumer %d, Exiting.\n", (i+1));
-//        pthread_exit(consumerThreads[i]);
+        printf("Consumer %d, Exiting.\n", i+1);
     }
     return 0;
 }
@@ -147,16 +141,11 @@ void initItemBuffer(){
     }
 }
 
-void printItemBuffer(){
-    for(int i = 0; i < BUFFER_SIZE; i++){
-        printf("Itembuffer %d: value: %d", i, itemBuffer[i]);
-    }
-}
 void initConsumerThreads(int numThreads){
     consumerThreads = malloc(sizeof(pthread_t)*numThreads);
     for (int i = 0; i < numThreads; i++){
         if(pthread_create(&consumerThreads[i],NULL, (void*)Consumer, (int*)i)!=0)
-            fprintf(stderr, "pthread failed to create errno: %d consumerID: %d",errno, i);
+            fprintf(stderr, "pthread failed to create errno: %d consumerID: %d",errno, i+1);
         else
             printf("Init Consumer %d\n", i+1);
     }
@@ -166,15 +155,14 @@ void initMutexAndCondVars() {
     pthread_mutex_init(&buff_mutex, NULL);
     pthread_cond_init(&empty, NULL);
     pthread_cond_init(&full, NULL);
-    exitProducers = 0;
-    exitConsumers = 0;
+    exitThreads = 0;
 }
 
 void initProducerThreads(int numThreads){
     producerThreads = (pthread_t *)malloc(sizeof(pthread_t)*numThreads);
     for (int i = 0; i < numThreads; i++){
         if(pthread_create(&producerThreads[i],NULL, (void*)Producer, (int *)i)!=0)
-            fprintf(stderr, "pthread failed to create errno: %d producerID: %d",errno, &i);
+            fprintf(stderr, "pthread failed to create errno: %d producerID: %d",errno, i+1);
         else
             printf("Init Producer %d\n", i+1);
     }
@@ -199,26 +187,21 @@ int InsertItem(BufferItem item){
 
 void Producer(int prodId) {
     int randSleep = -1;
-    int id = prodId;
+    int id = prodId + 1;
     while(1) {
-        if (exitProducers == 1)
+        if (exitThreads == 1) {
+            pthread_mutex_unlock(&buff_mutex);
             return;
-        randSleep = rand()%runTime;
+        }
+        randSleep = rand()%10;
 
         BufferItem item = rand();
 
         while (pthread_mutex_lock(&buff_mutex) != 0)
             fprintf(stderr, "ERROR on pthread_mutex_lock. producerID: %d, errno:%d ", id, errno);
-//        int result = InsertItem(item);
-//        if (result == -1)
-//            pthread_cond_signal(&full);
-//        while(InsertItem(item) ==-1){
         if(InsertItem(item) == -1){
             printf("Full Buffer\n");
-//            signal that the itemBuffer is
             pthread_cond_broadcast(&full);
-//            wait for a signal that the buffer is consumed
-//            pthread_cond_wait(&empty, &buff_mutex);
         }else{
             fprintf(stdout, "Producer %d Producing\n", id);
         }
@@ -227,7 +210,7 @@ void Producer(int prodId) {
             fprintf(stderr, "ERROR on pthread_mutex_unlock. producerID: %d, errno:%d ", id, errno);
         printf("producer %d sleeping: %d\n", id, randSleep);
         sleep(randSleep);
-        fprintf(stdout, "Producer %d done sleeping: %d\n", prodId, randSleep);
+        fprintf(stdout, "Producer %d done sleeping: %d\n", id, randSleep);
         fflush(stdout);
     }
 }
