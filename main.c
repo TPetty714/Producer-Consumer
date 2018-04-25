@@ -86,13 +86,12 @@ int main(int argc,char** argv){
 
 //    6. Exit
 
-//    printf("Exiting\n");
+
 
     Exit(1);
     free(producerThreads);
     free(consumerThreads);
-//    sleep(runTime);
-    EchoOn();
+    printf("Main Exiting\n");
     return 0;
 
 }
@@ -140,11 +139,11 @@ void EchoOff(){
 
 }
 
-void EchoOn(){
-    if(!(termInfo.c_lflag & ECHO)) {
-        tcsetattr(STDOUT_FILENO, TCSANOW, &termSave);
-    }
-}
+//void EchoOn(){
+//    if(!(termInfo.c_lflag & ECHO)) {
+//        tcsetattr(STDOUT_FILENO, TCSANOW, &termSave);
+//    }
+//}
 
 int Exit(int sig) {
 //    printf("Exiting\n");
