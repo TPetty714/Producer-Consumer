@@ -9,6 +9,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <signal.h>
+#include <termio.h>
 #include "buffer.h"
 
 char* ShareMalloc(int);
@@ -24,8 +25,11 @@ int exitThreads;
 int runTime = 0;
 int numProdThreads = 0;
 int numConsThreads = 0;
+struct termios termInfo, termSave;
 
 void Consumer(int conId);
+void EchoOff();
+void EchoOn();
 int Exit(int);
 void initConsumerThreads(int numThreads);
 void initItemBuffer();
@@ -36,7 +40,9 @@ void Producer(int prodId);
 int RemoveItem(BufferItem *item);
 void ThreadExit(int);
 
+
 int main(int argc,char** argv){
+    EchoOff();
 //    1. get command line arguments argv[1], argv[2], argv[3]
     char* c = argv[1];
 
@@ -86,13 +92,11 @@ int main(int argc,char** argv){
     free(producerThreads);
     free(consumerThreads);
 //    sleep(runTime);
+    EchoOn();
     return 0;
+
 }
-void ThreadExit(int sig){
-    signal(SIGINT, ThreadExit);
-//    printf("thread exit\n");
-    exitThreads = 1;
-}
+
 
 void Consumer(int conId) {
     int id = conId + 1;
@@ -120,6 +124,25 @@ void Consumer(int conId) {
         sleep(randSleep);
 //        fprintf(stdout, "Consumer %d done sleeping: %d\n", id, randSleep);
         fflush(stdout);
+    }
+}
+
+void EchoOff(){
+    char c = tcgetattr(0,&termInfo);
+
+    if(c == -1 ){
+        perror("tcgetattr\n");
+    }
+    if(termInfo.c_lflag & ECHO) {
+        termInfo.c_lflag &= ~(ECHO | ECHOE | ECHOK | ECHONL);
+        tcsetattr(STDOUT_FILENO, TCSANOW, &termInfo);
+    }
+
+}
+
+void EchoOn(){
+    if(!(termInfo.c_lflag & ECHO)) {
+        tcsetattr(STDOUT_FILENO, TCSANOW, &termSave);
     }
 }
 
@@ -229,4 +252,10 @@ int RemoveItem(BufferItem *item){
         }
     }
     return  -1;// return -1 indicating an error condition
+}
+
+void ThreadExit(int sig){
+    signal(SIGINT, ThreadExit);
+    printf("SIGINT signal recieved Quitting Program NOW.\n");
+    exitThreads = 1;
 }
